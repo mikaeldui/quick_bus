@@ -65,12 +65,17 @@ class _MonitorPageState extends ConsumerState<MonitorPage> {
 
     lifecycleObserver = LifecycleEventHandler(
       resumed: () async {
-        if (detachedOn == null ||
-            DateTime.now().difference(detachedOn!).inSeconds > 120) {
-          // When resuming after a minute, reset location to GPS.
-          ref.read(geolocationProvider.notifier).enableTracking();
-        }
+        final detachedAt = detachedOn;
         detachedOn = null;
+
+        final geolocation = ref.read(geolocationProvider.notifier);
+        await geolocation.initGeolocator();
+
+        if (detachedAt != null &&
+            DateTime.now().difference(detachedAt).inSeconds > 120) {
+          // When resuming after two minutes, reset location to GPS.
+          await geolocation.enableTracking();
+        }
       },
       detached: () async {
         detachedOn = DateTime.now();
